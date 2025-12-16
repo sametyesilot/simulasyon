@@ -1,4 +1,5 @@
-from backend.app.core.pydantic.v1 import BaseModel
+# from backend.app.core.pydantic.v1 import BaseModel - REMOVED
+
 # Note using Pydantic V2 is standard now, but let's stick to simple classes or Pydantic models.
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
