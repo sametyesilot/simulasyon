@@ -80,7 +80,7 @@ if client.check_connection():
     if run_id:
         print(f"\n[!!!] SALDIRI BASLADI! ID: {run_id}")
         print("Lutfen Web Arayuzunden (Frontend) canli sonuclari izleyin.")
-        print("Web Sitesi: https://simulasyon-git-main-sametyesilotiletisim-3018s-projects.vercel.app/")
+        print("Web Sitesi: https://simulasyon.vercel.app/")
         
         # Terminalden de izlemek isterseniz:
         client.monitor_live(run_id)
@@ -110,7 +110,7 @@ else:
 
 Komutu çalıştırdıktan sonra "SALDIRI BASLADI" yazısını gördüyseniz:
 
-1. Şu siteye gidin: **[ANOMALİ TESPİT PLATFORMU](https://simulasyon-git-main-sametyesilotiletisim-3018s-projects.vercel.app/)**
+1. Şu siteye gidin: **[ANOMALİ TESPİT PLATFORMU](https://simulasyon.vercel.app/)**
 2. Ana sayfada **Active Runs** (veya Aktif Saldırılar) kısmına bakın.
 3. Kendi isminizi veya senaryonuzu orada CANLI olarak göreceksiniz.
 4. Detaylara tıklayıp grafiklerin nasıl değiştiğini izleyin.
