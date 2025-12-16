@@ -16,8 +16,9 @@ import time
 import json
 
 class EvcsAttackClient:
-    def __init__(self, api_url="http://localhost:8000"):
+    def __init__(self, api_url="http://localhost:8000", api_key="secret-dev-key"):
         self.api_url = api_url.rstrip("/")
+        self.api_key = api_key
         print(f"[*] Initialized Attack Client targeting: {self.api_url}")
 
     def check_connection(self):
@@ -44,9 +45,10 @@ class EvcsAttackClient:
             "params": params
         }
 
+        headers = {"x-api-key": self.api_key}
         print(f"[*] Launching Attack Scenario: {scenario_id}...")
         try:
-            r = requests.post(f"{self.api_url}/runs", json=payload)
+            r = requests.post(f"{self.api_url}/runs", json=payload, headers=headers)
             if r.status_code == 200:
                 data = r.json()
                 print(f"[+] Attack Started! Run ID: {data['runId']}")
@@ -86,6 +88,7 @@ class EvcsAttackClient:
 export default function DeveloperPage() {
     const [activeTab, setActiveTab] = useState<'json' | 'python'>('python');
     const [planJson, setPlanJson] = useState(JSON.stringify(DEFAULT_PLAN, null, 2));
+    const [apiKey, setApiKey] = useState("");
     const [validationResult, setValidationResult] = useState<any>(null);
     const [safetyLog, setSafetyLog] = useState<string[]>([]);
 
@@ -94,7 +97,10 @@ export default function DeveloperPage() {
             const parsed = JSON.parse(planJson);
             const res = await fetch(`${API_BASE_URL}/dev/validate-plan`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey
+                },
                 body: JSON.stringify(parsed)
             });
             const data = await res.json();
@@ -111,7 +117,10 @@ export default function DeveloperPage() {
             try {
                 const res = await fetch(`${API_BASE_URL}/dev/validate-plan`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': apiKey
+                    },
                     body: JSON.stringify({ ...DEFAULT_PLAN, params: { junk: "A".repeat(25000) } })
                 });
                 const data = await res.json();
@@ -122,6 +131,7 @@ export default function DeveloperPage() {
         } else if (testName === 'rate_limit') {
             setSafetyLog(prev => [...prev, `Simulating 10 requests in 100ms...`]);
             for (let i = 0; i < 10; i++) {
+                // Basic health check doesn't need auth, so spamming it is fine for DoS test
                 fetch(`${API_BASE_URL}/health`);
             }
             setSafetyLog(prev => [...prev, `Check backend logs for 429 (Simulated)`]);
@@ -134,7 +144,16 @@ export default function DeveloperPage() {
         <div className="min-h-screen p-8 max-w-7xl mx-auto bg-gray-900 text-gray-100">
             <div className="flex justify-between items-center mb-8 border-b border-gray-700 pb-4">
                 <h1 className="text-2xl font-bold font-mono text-green-400">Developer Console</h1>
-                <Link href="/" className="px-4 py-2 bg-gray-700 rounded hover:bg-gray-600">Exit Developer Mode</Link>
+                <div className="flex items-center gap-4">
+                    <input
+                        type="password"
+                        placeholder="Enter DEV_API_KEY"
+                        className="bg-gray-800 border border-gray-600 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-green-500"
+                        value={apiKey}
+                        onChange={e => setApiKey(e.target.value)}
+                    />
+                    <Link href="/" className="px-4 py-2 bg-gray-700 rounded hover:bg-gray-600">Exit Developer Mode</Link>
+                </div>
             </div>
 
             {/* Tabs */}
@@ -180,11 +199,8 @@ export default function DeveloperPage() {
                         <div className="bg-gray-800 p-6 rounded border border-gray-700">
                             <h2 className="text-xl font-semibold mb-2">Python Attack SDK</h2>
                             <p className="mb-4 text-gray-400 text-sm">
-                                Download this SDK to write attack scripts on your local machine.
-                                <br />
-                                1. Install python: <code>pip install requests</code><br />
-                                2. Create <code>evcs_attack.py</code> with the code below.<br />
-                                3. Write your script invoking <code>client.start_attack(...)</code>.
+                                Download this SDK to write attack scripts on your local machine.<br />
+                                Requires <code>pip install requests</code>.
                             </p>
                             <textarea
                                 className="w-full h-80 bg-black text-green-500 font-mono text-xs p-2 rounded"
@@ -214,7 +230,14 @@ export default function DeveloperPage() {
                                     <div className="text-xs text-gray-400">Tries to send a 25KB+ plan. Should be rejected.</div>
                                 </div>
                             </button>
-                            {/* ... other buttons ... */}
+
+                            <button onClick={() => runSafetyTest('rate_limit')} className="flex items-center w-full p-3 bg-gray-700 rounded hover:bg-gray-600">
+                                <span className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center mr-4 text-xs font-bold">R</span>
+                                <div className="text-left">
+                                    <div className="font-bold">Rate Limit Test</div>
+                                    <div className="text-xs text-gray-400">Spams the API. Expects 429 Too Many Requests (if configured).</div>
+                                </div>
+                            </button>
                         </div>
                         <div className="mt-6 bg-black p-2 rounded h-40 overflow-y-auto font-mono text-xs text-green-500">
                             {safetyLog.map((line, i) => <div key={i}>{'> ' + line}</div>)}

@@ -4,12 +4,14 @@ import asyncio
 from backend.app.api import routes_scenarios, routes_runs, routes_devtools
 from backend.app.engine.simulator import engine
 
+from backend.app.core.config import settings
+
 app = FastAPI(title="EVCS Anomaly Platform", version="1.0.0")
 
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Allow all for simplicity in this demo, strictly should be configured
+    allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

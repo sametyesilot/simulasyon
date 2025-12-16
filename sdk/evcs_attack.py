@@ -3,8 +3,9 @@ import time
 import json
 
 class EvcsAttackClient:
-    def __init__(self, api_url="http://localhost:8000"):
+    def __init__(self, api_url="http://localhost:8000", api_key="secret-dev-key"):
         self.api_url = api_url.rstrip("/")
+        self.api_key = api_key
         print(f"[*] Initialized Attack Client targeting: {self.api_url}")
 
     def check_connection(self):

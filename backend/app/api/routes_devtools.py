@@ -1,10 +1,18 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Header, HTTPException
 from backend.app.engine.entities import AnomalyRunPlan
+from backend.app.core.config import settings
 
 router = APIRouter()
 
-@router.post("/dev/validate-plan")
-def validate_plan(plan: AnomalyRunPlan):
+def verify_key(x_api_key: str = Header(None)):
+    if x_api_key != settings.DEV_API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API Key")
+
+@router.post("/dev/validate-plan", dependencies=[])
+def validate_plan(plan: AnomalyRunPlan, x_api_key: str = Header(None)):
+    # Manual check since dependencies sometimes tricky with simple setups
+    if x_api_key != settings.DEV_API_KEY:
+         return {"valid": False, "error": "Unauthorized: Invalid API Key"}
     # Basic validation
     if plan.durationSeconds > 300:
         return {"valid": False, "error": "Duration exceeds 300s limit"}
