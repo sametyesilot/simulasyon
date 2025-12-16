@@ -1,0 +1,138 @@
+[
+    {
+        "id": "ahmet-ddos",
+        "personName": "Ahmet_Bsg",
+        "anomalyTitle": "Merkezi Sisteme DDoS (CSMS Overload)",
+        "category": "Network/DoS",
+        "description": "CSMS'e aşırı sayıda Heartbeat ve StatusNotification mesajı göndererek sistemi erişilemez hale getirme.",
+        "indicator": "High RPS, Increased API Latency, 503 Errors",
+        "parameters": [
+            "rps_multiplier",
+            "botnet_size"
+        ]
+    },
+    {
+        "id": "atahan-auth-bypass",
+        "personName": "Atahan_BSG",
+        "anomalyTitle": "Yetkisiz Erişim / RFID Cloning",
+        "category": "Identity",
+        "description": "Kopyalanmış RFID kartlar veya manipüle edilmiş Authorize istekleri ile yetkisiz şarj başlatma.",
+        "indicator": "Duplicate Tag Usage, Invalid Signatures, Concurrent Sessions",
+        "parameters": [
+            "clone_count",
+            "auth_delay_ms"
+        ]
+    },
+    {
+        "id": "samet-energy-theft",
+        "personName": "Samet_BSG",
+        "anomalyTitle": "Enerji Hırsızlığı / Sayaç Manipülasyonu",
+        "category": "Data Integrity",
+        "description": "MeterValues mesajlarını manipüle ederek tüketilen enerjiyi düşük gösterme.",
+        "indicator": "Metervals < Physical Consumption, Signature Failures",
+        "parameters": [
+            "theft_percentage"
+        ]
+    },
+    {
+        "id": "yusuf-mitm-ocpp",
+        "personName": "Yusuf_Bsg",
+        "anomalyTitle": "Man-in-the-Middle (OCPP)",
+        "category": "Network/Protocol",
+        "description": "Şarj istasyonu ile CSMS arasına girerek mesaj içeriğini değiştirme (örn. StopTransaction engelleme).",
+        "indicator": "Invalid Certs, Replayed Messages, Hash Mismatch",
+        "parameters": [
+            "intercept_rate"
+        ]
+    },
+    {
+        "id": "gokdeniz-firmware",
+        "personName": "Gokdeniz_Bsg",
+        "anomalyTitle": "Zararlı Firmware Güncellemesi",
+        "category": "Firmware",
+        "description": "FirmwareStatusNotification üzerinden sahte güncelleme durumu veya zararlı yazılım enjeksiyonu.",
+        "indicator": "Unexpected Fw Version, Reboot Loops, Failed Verify",
+        "parameters": [
+            "malware_size_mb"
+        ]
+    },
+    {
+        "id": "yunus-offgrid-voltage",
+        "personName": "Yunus_BSG",
+        "anomalyTitle": "Off-Grid DC Bara Voltaj Manipülasyonu",
+        "category": "Physical/Grid",
+        "description": "Şebekeden bağımsız istasyonda DC bara voltajını manipüle ederek dump load'u devre dışı bırakma veya bataryaya zarar verme.",
+        "indicator": "DC Voltage Spikes, Dump Load Inactive, Grid Instability",
+        "parameters": [
+            "voltage_spike_v",
+            "dump_load_disable"
+        ]
+    },
+    {
+        "id": "beyza-blockchain-delay",
+        "personName": "Beyza-bsg",
+        "anomalyTitle": "Konsensüs Gecikmesi / Blok Onay Anomalisi",
+        "category": "Blockchain",
+        "description": "Blok zinciri tabanlı şarj ödemelerinde onay gecikmesi yaratarak hizmeti aksatma.",
+        "indicator": "High Block Time, Orphan Rate > 5%",
+        "parameters": [
+            "miner_latency_ms"
+        ]
+    },
+    {
+        "id": "mirac-supply-chain",
+        "personName": "Mirac_BSG",
+        "anomalyTitle": "Firmware Supply Chain Attack",
+        "category": "Firmware/SupplyChain",
+        "description": "Tedarik zinciri aşamasında firmware içine arka kapı yerleştirilmesi.",
+        "indicator": "Unauthorized Outbound Traffic, Hidden Admin Accounts",
+        "parameters": [
+            "backdoor_port"
+        ]
+    },
+    {
+        "id": "omer-fake-fault",
+        "personName": "ömer",
+        "anomalyTitle": "Sahte Arıza Bildirimi (False Status)",
+        "category": "Protocol/Availability",
+        "description": "İstasyonun fiziksel bir sorunu olmamasına rağmen sürekli Faulted durumu bildirmesi.",
+        "indicator": "Status=Faulted, No Physical Codes",
+        "parameters": [
+            "fault_frequency"
+        ]
+    },
+    {
+        "id": "merve-billing",
+        "personName": "Merve - bsg",
+        "anomalyTitle": "Fatura/Tarife Manipülasyonu",
+        "category": "Business Logic",
+        "description": "Tarife tablolarını değiştirerek veya enerji birim fiyatını manipüle ederek yanlış faturalama.",
+        "indicator": "Revenue Leakage, Billing Mismatch",
+        "parameters": [
+            "price_modification_factor"
+        ]
+    },
+    {
+        "id": "feyza-ddos-net",
+        "personName": "Feyza_BSG",
+        "anomalyTitle": "DDoS (Network Layer)",
+        "category": "Network/DoS",
+        "description": "Alt seviye ağ paketleri ile (SYN Flood vb.) istasyon iletişimini kesme.",
+        "indicator": "Packet Loss, Bandwidth Saturation",
+        "parameters": [
+            "packet_size",
+            "pps"
+        ]
+    },
+    {
+        "id": "muhammet-general",
+        "personName": "muhammet_bsg",
+        "anomalyTitle": "Genel Anomali Senaryosu",
+        "category": "General",
+        "description": "Şarj istasyonu genel anomali senaryosu (Detaylandırılacak).",
+        "indicator": "Unknown Log Patterns",
+        "parameters": [
+            "intensity"
+        ]
+    }
+]
