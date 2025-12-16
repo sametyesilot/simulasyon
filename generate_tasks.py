@@ -1,11 +1,21 @@
-# Yetkisiz Erişim / RFID Cloning - Detaylı Saldırı ve Test Rehberi
+import json
+import os
+
+try:
+    with open("evcs-anomaly-platform/seed/anomalies_catalog.json", "r") as f:
+        catalog = json.load(f)
+except FileNotFoundError:
+    print("Catalog not found")
+    exit(1)
+
+TEMPLATE = """# {anomalyTitle} - Detaylı Saldırı ve Test Rehberi
 ================================================================================
 
-**Sorumlu:** Atahan_BSG
-**Kategori:** Identity
-**Senaryo ID:** `atahan-auth-bypass`
+**Sorumlu:** {personName}
+**Kategori:** {category}
+**Senaryo ID:** `{id}`
 
-Bu doküman, teknik bilgisi olmayan birinin bile **sıfırdan başlayarak** "Yetkisiz Erişim / RFID Cloning" saldırısını kendi bilgisayarından nasıl gerçekleştireceğini adım adım anlatır.
+Bu doküman, teknik bilgisi olmayan birinin bile **sıfırdan başlayarak** "{anomalyTitle}" saldırısını kendi bilgisayarından nasıl gerçekleştireceğini adım adım anlatır.
 
 ---
 
@@ -36,12 +46,12 @@ pip install requests
 
 Şimdi sizin sorumlu olduğunuz saldırı senaryosu için özel bir kod yazacağız. URL'ler otomatik olarak ayarlandı, sadece size verilen şifreyi girmeniz yeterli.
 
-1. `BSG_Test` klasörünün içinde `test_Atahan_BSG.py` adında yeni bir metin dosyası oluşturun (dosya uzantısının **.py** olduğuna emin olun, .txt kalmasın).
+1. `BSG_Test` klasörünün içinde `test_{personName}.py` adında yeni bir metin dosyası oluşturun (dosya uzantısının **.py** olduğuna emin olun, .txt kalmasın).
 2. Dosyayı Notepad veya benzeri bir editörle açın.
 3. Aşağıdaki kodları **KOPYALA - YAPIŞTIR** yapın:
 
 ```python
-# Dosya Adi: test_Atahan_BSG.py
+# Dosya Adi: test_{personName}.py
 from evcs_attack import EvcsAttackClient
 
 # ================= SADECE BURAYI DUZENLEYIN =================
@@ -53,21 +63,21 @@ API_KEY = "BURAYA_SIZE_VERILEN_SIFREYI_YAZIN"
 URL = "https://evcs-backend-samet.onrender.com"
 
 # Sizin Senaryo Bilgileriniz (Otomatik Tanimlandi):
-SENARYO_ID = "atahan-auth-bypass"
+SENARYO_ID = "{id}"
 
 client = EvcsAttackClient(api_url=URL, api_key=API_KEY)
 
-print(f"--- {SENARYO_ID} SALDIRISI HAZIRLANIYOR ---")
-print(f"Hedef: {URL}")
+print(f"--- {{SENARYO_ID}} SALDIRISI HAZIRLANIYOR ---")
+print(f"Hedef: {{URL}}")
 
 if client.check_connection():
     print(">> Sunucuya erisim BASARILI.")
     
     # Saldiri Parametreleri
-    parametreler = {
+    parametreler = {{
         "severity": "high",        # Saldiri siddeti
         "target_evse": "EVSE-001"  # Hedef sarj cihazi
-    }
+    }}
 
     print(f">> Saldiri baslatiliyor...")
     run_id = client.start_attack(
@@ -78,7 +88,7 @@ if client.check_connection():
     )
     
     if run_id:
-        print(f"\n[!!!] SALDIRI BASLADI! ID: {run_id}")
+        print(f"\\n[!!!] SALDIRI BASLADI! ID: {{run_id}}")
         print("Lutfen Web Arayuzunden (Frontend) canli sonuclari izleyin.")
         print("Web Sitesi: https://simulasyon-git-main-sametyesilotiletisim-3018s-projects.vercel.app/")
         
@@ -101,7 +111,7 @@ else:
    ```
 3. Scripti çalıştırın:
    ```bash
-   python test_Atahan_BSG.py
+   python test_{personName}.py
    ```
 
 ---
@@ -116,8 +126,23 @@ Komutu çalıştırdıktan sonra "SALDIRI BASLADI" yazısını gördüyseniz:
 4. Detaylara tıklayıp grafiklerin nasıl değiştiğini izleyin.
 
 **Beklenen Etki:**
-- Loglarda: `Duplicate Tag Usage, Invalid Signatures, Concurrent Sessions` benzeri uyarılar çıkmalı.
+- Loglarda: `{indicator}` benzeri uyarılar çıkmalı.
 - Grafiklerde: Anormal veri artışları görülmeli.
 
 ---
-*Bu doküman Atahan_BSG için özel olarak oluşturulmuştur.*
+*Bu doküman {personName} için özel olarak oluşturulmuştur.*
+"""
+
+out_dir = "evcs-anomaly-platform/gorevler"
+if not os.path.exists(out_dir):
+    os.makedirs(out_dir)
+
+for item in catalog:
+    # Sanitize filename
+    pname = item['personName'].replace(' ', '_').replace('/', '-')
+    aname = item['id'].replace('/', '-')
+    filename = f"{out_dir}/{pname}_{aname}.md"
+    content = TEMPLATE.format(**item)
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(content)
+    print(f"Generated {filename}")
