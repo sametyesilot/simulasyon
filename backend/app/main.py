@@ -31,6 +31,10 @@ async def startup_event():
 def health_check():
     return {"status": "ok", "engine_running": engine.running}
 
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to EVCS Anomaly Platform API. Go to /docs for Swagger UI."}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
