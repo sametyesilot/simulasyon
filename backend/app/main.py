@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import asyncio
-from backend.app.api import routes_scenarios, routes_runs, routes_devtools
+from backend.app.api import routes_scenarios, routes_runs, routes_devtools, routes_vulnerable
 from backend.app.engine.simulator import engine
 
 from backend.app.core.config import settings
@@ -21,6 +21,7 @@ app.add_middleware(
 app.include_router(routes_scenarios.router)
 app.include_router(routes_runs.router)
 app.include_router(routes_devtools.router)
+app.include_router(routes_vulnerable.router)
 
 @app.on_event("startup")
 async def startup_event():
