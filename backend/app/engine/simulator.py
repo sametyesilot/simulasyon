@@ -112,6 +112,40 @@ class SimulationEngine:
              if block_time > 120:
                  run.add_log("Consensus delay detected. Block orphaned.", "WARN")
 
+        elif "energy" in sid or "theft" in sid:
+            # Energy Theft Anomaly Simulation (Samet's scenario)
+            real_energy = 100.0  # Real consumption in kWh
+            reported_energy = 1.0  # Manipulated value
+            real_price = 5.0  # TL/kWh
+            theft_pct = ((real_energy - reported_energy) / real_energy) * 100
+            
+            # Simulate MeterValues messages
+            if int(elapsed) % 10 == 0:
+                run.add_log(f"EVSE-001 MeterValues: {reported_energy} kWh reported", "INFO")
+                run.add_log(f"Physical Meter Reading: {real_energy} kWh", "DEBUG")
+            
+            # Detect anomaly
+            if int(elapsed) % 15 == 0:
+                run.add_log(f"⚠️  WARNING: Reported energy ({reported_energy} kWh) << Physical meter ({real_energy} kWh)", "WARN")
+                run.add_log(f"🚨 CRITICAL: Energy theft detected! Theft: {theft_pct:.1f}%", "ERROR")
+            
+            # Metrics
+            run.add_metric("reported_energy_kwh", reported_energy)
+            run.add_metric("actual_energy_kwh", real_energy)
+            run.add_metric("theft_percentage", theft_pct)
+            run.add_metric("stolen_money_tl", (real_energy - reported_energy) * real_price)
+            
+            # Signature failures  
+            if random.random() < 0.3:
+                run.add_log("Signature verification FAILED for MeterValues", "ERROR")
+            
+            # Financial impact
+            if int(elapsed) == 30:
+                expected_cost = real_energy * real_price
+                actual_cost = reported_energy * real_price
+                run.add_log(f"💰 Expected bill: {expected_cost} TL, Actual bill: {actual_cost} TL", "WARN")
+                run.add_log(f"💸 Revenue loss: {expected_cost - actual_cost} TL", "ERROR")
+
         else:
             # Random generic noise
             run.add_metric("load_load_%", random.randint(20, 80))
